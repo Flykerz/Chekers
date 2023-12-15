@@ -95,7 +95,6 @@ namespace Echiquier
         public void Interaction(CaseEtat c)
         {
             CaseEtat source = null;
-            bool mange = false;
 
             // Find the selected source case
             for (int i = 0; i < _cases.Length; i++)
@@ -117,20 +116,25 @@ namespace Echiquier
             }
             else
             {
-                if (MouvementManger(source, c))
+                CaseEtat? ennemiAManger = MouvementManger(source, c);
+                if (ennemiAManger != null)
                 {
+                    source.Mouvement(c);
+                    ennemiAManger.MangePiece();
+                    joueurEnCours = !joueurEnCours;
+
                     // int positionCaseEntre = (source.Position + c.Position) / 2;
                     // _cases[positionCaseEntre].MangePiece();
                     // source.Mouvement(c);
                     // mange = true;
 
-                    
-                    
+
+
                     //     c.Selectionne(joueurEnCours); // Si le pion a Manger, On lui laisse la possibilité de rejouer derrière
-                   
-                    // mange = false;
+
+
                 }
-                else if (MouvementSimple(source, c) && mange == false)
+                else if (MouvementSimple(source, c))
                 {
                     source.Mouvement(c);
                     joueurEnCours = !joueurEnCours;
@@ -153,15 +157,61 @@ namespace Echiquier
         }
 
 
-        public bool MouvementManger(CaseEtat source, CaseEtat target)
+        public CaseEtat? MouvementManger(CaseEtat source, CaseEtat target)
         {
             // Verifie si la destination est vide
             bool destinationIsEmpty = target.Piece == null;
 
             if (!destinationIsEmpty)
             {
-                return false; 
+                return null; 
             }
+
+            // Calcule la position des pieces entre source et target en fonction de la direction
+            //Direction 1
+            if (target.X == source.X + 2 && target.Y == source.Y - 2)
+            {
+                int positionCaseEntreX = source.X + 1 ;
+                int positionCaseEntreY = source.Y - 1;
+                int indexCaseEntre = positionCaseEntreY * DIMENSION + positionCaseEntreX;
+                CaseEtat entreCaseEtat = _cases[indexCaseEntre];
+                bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
+                return estEnnemi ? entreCaseEtat : null;
+            }
+
+            //Direction 2
+            if (target.X == source.X + 2 && target.Y == source.Y + 2)
+            {
+                int positionCaseEntreX = source.X + 1;
+                int positionCaseEntreY = source.Y + 1;
+                int indexCaseEntre = positionCaseEntreY * DIMENSION + positionCaseEntreX;
+                CaseEtat entreCaseEtat = _cases[indexCaseEntre];
+                bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
+                return estEnnemi ? entreCaseEtat : null;
+            }
+            //Direction 3
+            if (target.X == source.X - 2 && target.Y == source.Y - 2)
+            {
+                int positionCaseEntreX = source.X - 1;
+                int positionCaseEntreY = source.Y - 1;
+                int indexCaseEntre = positionCaseEntreY * DIMENSION + positionCaseEntreX;
+                CaseEtat entreCaseEtat = _cases[indexCaseEntre];
+                bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
+                return estEnnemi ? entreCaseEtat : null;
+            }
+            //Direction 4   
+            if (target.X == source.X - 2 && target.Y == source.Y + 2)
+            {
+                int positionCaseEntreX = source.X - 1;
+                int positionCaseEntreY = source.Y + 1;
+                int indexCaseEntre = positionCaseEntreY * DIMENSION + positionCaseEntreX;
+                CaseEtat entreCaseEtat = _cases[indexCaseEntre];
+                bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
+                return estEnnemi ? entreCaseEtat : null;
+            }
+
+
+
 
             // // Calcule la position des pieces entre source et target
             // int positionCaseEntre = (source.Position + target.Position) / 2;
@@ -188,13 +238,11 @@ namespace Echiquier
             //     }
             // }
 
-            return false; // No valid capture or regular move found
+            return null; // No valid capture or regular move found
         }
 
 
-
-
-
+      
         public bool MouvementSimple(CaseEtat source, CaseEtat target)
         {
             // On ne peut se déplacer que sur une case libre
@@ -203,7 +251,25 @@ namespace Echiquier
                 return false;
             }
 
-            return false;
+            if (source.X == 0)
+            {
+                return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X + 1)
+                     || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
+            }
+            if (source.X == DIMENSION - 1)
+            {
+                return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X - 1)
+                     || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X - 1);
+            }
+            return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X - 1)
+                || (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X + 1)
+                || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X - 1)
+                || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
+
+
+
+
+
             // if (source.X % DIMENSION == 0)
             // {
             //     return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION + 1)
@@ -224,7 +290,18 @@ namespace Echiquier
 
         public int Gagne(CaseEtat source)
         {
-            return 0;
+            if (source.Piece.Couleur == false && source.Y == 0 )
+             {
+                 return 1;
+
+             }
+            if (source.Piece.Couleur == true && source.Y == 9)
+            {
+                return 2;
+
+            }
+            else { return 0; }
+            
             // if (source.Piece.Couleur == false && source.Position < DIMENSION )
             // {
             //     return 1;

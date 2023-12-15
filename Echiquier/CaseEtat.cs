@@ -75,6 +75,7 @@ namespace Echiquier
         }
         public void MangePiece()
         {
+
             Piece = null;
         }
 
