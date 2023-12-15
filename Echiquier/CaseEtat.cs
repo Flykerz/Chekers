@@ -63,7 +63,7 @@ namespace Echiquier
         public bool EstDestinationValide
         {
             get { return _estDestinationValide; }
-            private set
+            set
             {
                 _estDestinationValide = value;
                 OnPropertyChanged(nameof(EstDestinationValide));

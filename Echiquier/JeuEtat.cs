@@ -16,6 +16,8 @@ namespace Echiquier
 
         private readonly CaseEtat[] _cases;
 
+        // Dictionnaire indiquant quelles cases ont des manger obligatoires (si un pion peut manger, il doit le faire)
+        // NB: Seules les cases qui ont des manger obligatoires sont présentes (afin d'économiser de la mémoire
         private Dictionary<CaseEtat, List<CaseEtat>> _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
 
         private bool _joueurEnCours = false; // Commence par blanc
@@ -30,10 +32,10 @@ namespace Echiquier
             for (int i = 0; i < _cases.Length; i++)
             {
                 _cases[i] = new CaseEtat(
-                    i % DIMENSION,
-                    i / DIMENSION,
-                    (i % 2 == 0) ^ (i / DIMENSION % 2 == 0),
-                    PieceInitiale(i)
+                    i % DIMENSION,                              // X
+                    i / DIMENSION,                              // Y
+                    (i % 2 == 0) ^ (i / DIMENSION % 2 == 0),    // Couleur
+                    PieceInitiale(i)                            // Piece
                 );
             }
         }
@@ -98,15 +100,15 @@ namespace Echiquier
         {
             CaseEtat? source = GetCaseSelectionnee();
 
-            // Si on n'a pas de source, on s'arrête si ...
+            // Si on n'a pas de source...
             if (source == null)
             {
-                // ... la case ciblée est vide, ou appartient à l'autre joueur
+                // ... on s'arrête si la case ciblée est vide, ou appartient à l'autre joueur ...
                 if (caseCliquee.Piece == null || caseCliquee.Piece.Couleur != _joueurEnCours)
                 {
                     return;
                 }
-                // ... on a des manger obligatoires
+                // ... ou bien si on a des manger obligatoires autre que sur la case cliquée
                 if (_mangerObligatoires.Count > 0 && !_mangerObligatoires.ContainsKey(caseCliquee))
                 {
                     return;
@@ -114,6 +116,7 @@ namespace Echiquier
 
                 // Sinon, on peut sélectionner la case, et on s'arrête
                 caseCliquee.Selectionne(_joueurEnCours);
+                MetAJourDestinationsValides(caseCliquee);
                 return;
             }
 
@@ -122,16 +125,17 @@ namespace Echiquier
             if (source == caseCliquee && _caseEnTrainDeManger == null)
             {
                 source.Deselectionne();
+                MetAJourDestinationsValides(null);
                 return;
             }
 
-            // Si on a une source et des mangers de disponibles, on est obligé de choisir parmi eux
+            // Si on a une source et des mangers obligatoires, on est obligé de choisir parmi eux
             if (_mangerObligatoires.Count > 0 && _mangerObligatoires.ContainsKey(source) && !_mangerObligatoires[source].Contains(caseCliquee))
             {
                 return;
             }
 
-            // Si on a une source et une destination de définie
+            // Si on a une source et une destination de définie, soit on mange, soit on fait un déplacement simple
             CaseEtat? ennemiAManger = MouvementManger(source, caseCliquee);
             if (ennemiAManger != null)
             {
@@ -144,11 +148,14 @@ namespace Echiquier
                 {
                     _caseEnTrainDeManger = caseCliquee;
                     caseCliquee.Selectionne(_joueurEnCours);
+                    MetAJourDestinationsValides(caseCliquee);
                 } 
                 else
                 {
+                    _caseEnTrainDeManger = null;
                     ChangeJoueur();
                     CalculeMangerObligatoires();
+                    MetAJourDestinationsValides(null);
                 }
             }
             else if (MouvementSimple(source, caseCliquee))
@@ -156,22 +163,24 @@ namespace Echiquier
                 source.Mouvement(caseCliquee);
                 ChangeJoueur();
                 CalculeMangerObligatoires();
+                MetAJourDestinationsValides(null);
+            }
 
-                int gagne = Gagne(caseCliquee);
-                if (gagne == 1)
-                {
-                    MessageBox.Show("Les Blancs ont gagnés");
-                }
-                else if (gagne == 2)
-                {
-                    MessageBox.Show("Les Noirs ont gagnés");
-                }
+            // Gestion de la potentielle victoire d'un camp
+            int gagne = Gagne(caseCliquee);
+            if (gagne == 1)
+            {
+                MessageBox.Show("Les Blancs ont gagnés");
+            }
+            else if (gagne == 2)
+            {
+                MessageBox.Show("Les Noirs ont gagnés");
             }
         }
 
         private CaseEtat? GetCaseSelectionnee()
         {
-            // Find the selected source case
+            // Essaie de trouver la seule case sélectionnée (normalement, elle est unique)
             for (int i = 0; i < _cases.Length; i++)
             {
                 if (_cases[i].Selection)
@@ -192,15 +201,12 @@ namespace Echiquier
         public CaseEtat? MouvementManger(CaseEtat source, CaseEtat target)
         {
             // Verifie si la destination est vide
-            bool destinationIsEmpty = target.Piece == null;
-
-            if (!destinationIsEmpty)
+            if (target.Piece != null)
             {
                 return null;
             }
 
-            // Calcule la position des pieces entre source et target en fonction de la direction
-            //Direction 1
+            // Vérifie si on peut manger l'ennemi dans la direction en haut à droite
             if (target.X == source.X + 2 && target.Y == source.Y - 2)
             {
                 int positionCaseEntreX = source.X + 1;
@@ -211,7 +217,7 @@ namespace Echiquier
                 return estEnnemi ? entreCaseEtat : null;
             }
 
-            //Direction 2
+            // Vérifie si on peut manger l'ennemi dans la direction en bas à droite
             if (target.X == source.X + 2 && target.Y == source.Y + 2)
             {
                 int positionCaseEntreX = source.X + 1;
@@ -221,7 +227,8 @@ namespace Echiquier
                 bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
                 return estEnnemi ? entreCaseEtat : null;
             }
-            //Direction 3
+
+            // Vérifie si on peut manger l'ennemi dans la direction en haut à gauche
             if (target.X == source.X - 2 && target.Y == source.Y - 2)
             {
                 int positionCaseEntreX = source.X - 1;
@@ -231,7 +238,8 @@ namespace Echiquier
                 bool estEnnemi = entreCaseEtat.Piece != null && source.Piece != null && entreCaseEtat.Piece.Couleur != source.Piece.Couleur;
                 return estEnnemi ? entreCaseEtat : null;
             }
-            //Direction 4   
+
+            // Vérifie si on peut manger l'ennemi dans la direction en bas à gauche
             if (target.X == source.X - 2 && target.Y == source.Y + 2)
             {
                 int positionCaseEntreX = source.X - 1;
@@ -242,47 +250,57 @@ namespace Echiquier
                 return estEnnemi ? entreCaseEtat : null;
             }
 
-            return null; // No valid capture or regular move found
+            return null;
         }
 
 
 
         public bool MouvementSimple(CaseEtat source, CaseEtat target)
         {
-            // On ne peut se déplacer que sur une case libre
-            bool DestinationEstLibre = target.Piece == null;
-            if (!DestinationEstLibre) {
+            // On ne peut se déplacer que sur une case libre, et que si la source est bien une pièce
+            if (target.Piece != null || source.Piece == null) {
                 return false;
             }
 
+            // Pour la première colonne, seuls les mouvements vers la droite sont possibles
             if (source.X == 0)
             {
                 return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X + 1)
                      || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
             }
+            // Et pour la dernière colonne, seuls ceux vers la gauche
             if (source.X == DIMENSION - 1)
             {
                 return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X - 1)
                      || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X - 1);
             }
+
+            // Sinon, on vérifie toutes les directions
             return (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X - 1)
                 || (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X + 1)
                 || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X - 1)
                 || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
         }
 
-        private void MetAJourDestinationsValides()
+        private void MetAJourDestinationsValides(CaseEtat? source)
         {
-            // Remise à zéro du dictionnaire des possibiltés
-            _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
-
             for (int i = 0; i < _cases.Length; i++)
             {
                 CaseEtat caseEtat = _cases[i];
-                List<CaseEtat> mangerObligatoires = CalculeMangerObligatoirePourCase(caseEtat);
-                if (mangerObligatoires.Count > 0)
+                // Si on a une source et que la case est valide par rapport à la source, on la colore
+                if (source != null && _mangerObligatoires.ContainsKey(source) && _mangerObligatoires[source].Contains(caseEtat))
                 {
-                    _mangerObligatoires.Add(caseEtat, mangerObligatoires);
+                    caseEtat.EstDestinationValide = true;
+                }
+                // Si on n'a pas de source et qu'on a des mangers obligatoires, on les colore
+                else if (source == null && _mangerObligatoires.Count > 0 && _mangerObligatoires.ContainsKey(caseEtat))
+                {
+                    caseEtat.EstDestinationValide = true;
+                }
+                // Sinon, on en profite pour décolorer les cases qui étaient potentiellement colorées auparavant
+                else
+                {
+                    caseEtat.EstDestinationValide = false;
                 }
             }
         }
@@ -292,6 +310,7 @@ namespace Echiquier
             // Remise à zéro du dictionnaire des possibiltés
             _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
 
+            // On parcourt toutes les cases et on ajoute les possibilités au dictionnaire, seulement si il y en a
             for (int i = 0; i < _cases.Length; i++)
             {
                 CaseEtat caseEtat = _cases[i];
@@ -305,6 +324,7 @@ namespace Echiquier
 
         private List<CaseEtat> CalculeMangerObligatoirePourCase(CaseEtat caseEtat)
         {
+            // Les cases vides et ennemies n'ont pas de manger possible, on évite donc des calculs inutiles
             bool caseEstVide = caseEtat.Piece == null;
             bool caseEstEnnemie = caseEtat.Piece != null && caseEtat.Piece.Couleur != _joueurEnCours;
             if (caseEstVide || caseEstEnnemie)
@@ -314,7 +334,7 @@ namespace Echiquier
 
             List<CaseEtat> result = new List<CaseEtat>();
 
-            // En haut à droite
+            // Test de manger en haut à droite
             CaseEtat? targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 2 && c.Y == caseEtat.Y - 2);
             CaseEtat? ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 1 && c.Y == caseEtat.Y - 1);
             if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
@@ -322,7 +342,7 @@ namespace Echiquier
                 result.Add(targetSiManger);
             }
 
-            // En bas à droite
+            // Test de manger en bas à droite
             targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 2 && c.Y == caseEtat.Y + 2);
             ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 1 && c.Y == caseEtat.Y + 1);
             if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
@@ -330,7 +350,7 @@ namespace Echiquier
                 result.Add(targetSiManger);
             }
 
-            // En bas à gauche
+            // Test de manger en bas à gauche
             targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 2 && c.Y == caseEtat.Y + 2);
             ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 1 && c.Y == caseEtat.Y + 1);
             if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
@@ -338,7 +358,7 @@ namespace Echiquier
                 result.Add(targetSiManger);
             }
 
-            // En haut à gauche
+            // Test de manger en haut à gauche
             targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 2 && c.Y == caseEtat.Y - 2);
             ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 1 && c.Y == caseEtat.Y - 1);
             if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
@@ -351,16 +371,17 @@ namespace Echiquier
 
         private int Gagne(CaseEtat source)
         {
-            if (source.Piece.Couleur == false && source.Y == 0 )
+            // Un pion blanc gagne la partie s'il atteint le haut du plateau
+            if (source.Piece != null && source.Piece.Couleur == false && source.Y == 0 )
              {
                  return 1;
-
              }
-            if (source.Piece.Couleur == true && source.Y == 9)
+            // Un pion noir gagne la partie s'il atteint le bas du plateau
+            if (source.Piece != null && source.Piece.Couleur == true && source.Y == 9)
             {
                 return 2;
-
             }
+            // Sinon, la partie continue
             else {
                 return 0;
             }
