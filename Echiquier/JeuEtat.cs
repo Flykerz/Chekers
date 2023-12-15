@@ -20,6 +20,9 @@ namespace Echiquier
 
         private bool _joueurEnCours = false; // Commence par blanc
 
+        // Indique si un pion est en train de manger plusieurs fois d'affilée
+        private CaseEtat? _caseEnTrainDeManger = null;
+
         public JeuEtat()
         {
             _cases = new CaseEtat[DIMENSION * DIMENSION];
@@ -115,7 +118,8 @@ namespace Echiquier
             }
 
             // Si on a une source et qu'on re-clique sur la case sélectionnée, on la déselectionne
-            if (source == caseCliquee)
+            // Seule exception : si on est en train de manger plusieurs fois d'affilée, la déselection est désactivée
+            if (source == caseCliquee && _caseEnTrainDeManger == null)
             {
                 source.Deselectionne();
                 return;
@@ -133,12 +137,25 @@ namespace Echiquier
             {
                 source.Mouvement(caseCliquee);
                 ennemiAManger.MangePiece();
-                ChangeJoueur();
+
+                // Une fois qu'on a mangé, soit on a encore des possibilités de jeu et on continue, soit on change de joueur
+                CalculeMangerObligatoires();
+                if (_mangerObligatoires.Count > 0 && _mangerObligatoires.ContainsKey(caseCliquee))
+                {
+                    _caseEnTrainDeManger = caseCliquee;
+                    caseCliquee.Selectionne(_joueurEnCours);
+                } 
+                else
+                {
+                    ChangeJoueur();
+                    CalculeMangerObligatoires();
+                }
             }
             else if (MouvementSimple(source, caseCliquee))
             {
                 source.Mouvement(caseCliquee);
                 ChangeJoueur();
+                CalculeMangerObligatoires();
 
                 int gagne = Gagne(caseCliquee);
                 if (gagne == 1)
@@ -149,10 +166,6 @@ namespace Echiquier
                 {
                     MessageBox.Show("Les Noirs ont gagnés");
                 }
-            }
-            else
-            {
-                caseCliquee.Deselectionne();
             }
         }
 
@@ -173,7 +186,6 @@ namespace Echiquier
         private void ChangeJoueur()
         {
             _joueurEnCours = !_joueurEnCours;
-            CalculeMangerObligatoires();
         }
 
 
@@ -257,6 +269,22 @@ namespace Echiquier
                 || (source.Piece.Couleur == true && target.Y == source.Y + 1 && target.X == source.X + 1)
                 || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X - 1)
                 || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
+        }
+
+        private void MetAJourDestinationsValides()
+        {
+            // Remise à zéro du dictionnaire des possibiltés
+            _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
+
+            for (int i = 0; i < _cases.Length; i++)
+            {
+                CaseEtat caseEtat = _cases[i];
+                List<CaseEtat> mangerObligatoires = CalculeMangerObligatoirePourCase(caseEtat);
+                if (mangerObligatoires.Count > 0)
+                {
+                    _mangerObligatoires.Add(caseEtat, mangerObligatoires);
+                }
+            }
         }
 
         private void CalculeMangerObligatoires() 

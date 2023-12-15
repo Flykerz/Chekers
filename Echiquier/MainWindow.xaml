@@ -64,6 +64,10 @@
                         <Setter TargetName="_caseFond" Property="BorderBrush" Value="Red" />
                         <Setter TargetName="_caseFond" Property="BorderThickness" Value="4" />
                     </DataTrigger>
+                    <DataTrigger Binding="{Binding EstDestinationValide}" Value="True">
+                        <Setter TargetName="_caseFond" Property="BorderBrush" Value="Green" />
+                        <Setter TargetName="_caseFond" Property="BorderThickness" Value="4" />
+                    </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
         </ItemsControl.ItemTemplate>

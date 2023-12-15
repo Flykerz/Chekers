@@ -14,13 +14,15 @@ namespace Echiquier
 
         private PieceEtat? _piece; // La case peut porter une pièce (peut être à null).
         private       bool _selection;
+        private       bool _estDestinationValide;
 
         public CaseEtat(int x, int y, bool couleur, PieceEtat? piece)
         {
             _x = x;
             _y = y;
-            _couleur  = couleur;
-            _piece    = piece;
+            _couleur = couleur;
+            _piece = piece;
+            _estDestinationValide = false;
         }
 
         public bool Couleur
@@ -55,6 +57,16 @@ namespace Echiquier
             {
                 _selection = value;
                 OnPropertyChanged(nameof(Selection));
+            }
+        }
+
+        public bool EstDestinationValide
+        {
+            get { return _estDestinationValide; }
+            private set
+            {
+                _estDestinationValide = value;
+                OnPropertyChanged(nameof(EstDestinationValide));
             }
         }
 
