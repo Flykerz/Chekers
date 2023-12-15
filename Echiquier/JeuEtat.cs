@@ -15,6 +15,7 @@ namespace Echiquier
         public const int DIMENSION = 10;
 
         private readonly CaseEtat[] _cases;
+        // private readonly Plateau _plateau;
 
         private bool joueurEnCours = false; // Commence par blanc
 
@@ -24,8 +25,15 @@ namespace Echiquier
 
             for (int i = 0; i < _cases.Length; i++)
             {
-                _cases[i] = new CaseEtat(i, (i % 2 == 0) ^ (i / DIMENSION % 2 == 0), PieceInitiale(i));
+                _cases[i] = new CaseEtat(
+                    i % DIMENSION,
+                    i / DIMENSION,
+                    (i % 2 == 0) ^ (i / DIMENSION % 2 == 0),
+                    PieceInitiale(i)
+                );
             }
+
+            // this._plateau = new Plateau(this._cases);
         }
 
         private PieceEtat? PieceInitiale(int pos)
@@ -111,16 +119,16 @@ namespace Echiquier
             {
                 if (MouvementManger(source, c))
                 {
-                    int positionCaseEntre = (source.Position + c.Position) / 2;
-                    _cases[positionCaseEntre].MangePiece();
-                    source.Mouvement(c);
-                    mange = true;
+                    // int positionCaseEntre = (source.Position + c.Position) / 2;
+                    // _cases[positionCaseEntre].MangePiece();
+                    // source.Mouvement(c);
+                    // mange = true;
 
                     
                     
-                        c.Selectionne(joueurEnCours); // Si le pion a Manger, On lui laisse la possibilité de rejouer derrière
+                    //     c.Selectionne(joueurEnCours); // Si le pion a Manger, On lui laisse la possibilité de rejouer derrière
                    
-                    mange = false;
+                    // mange = false;
                 }
                 else if (MouvementSimple(source, c) && mange == false)
                 {
@@ -155,30 +163,30 @@ namespace Echiquier
                 return false; 
             }
 
-            // Calcule la position des pieces entre source et target
-            int positionCaseEntre = (source.Position + target.Position) / 2;
+            // // Calcule la position des pieces entre source et target
+            // int positionCaseEntre = (source.Position + target.Position) / 2;
 
-            // Verifie si il y a une piece sur la position entre source et target
-            bool isPieceBetween = _cases[positionCaseEntre].Piece != null;
+            // // Verifie si il y a une piece sur la position entre source et target
+            // bool isPieceBetween = _cases[positionCaseEntre].Piece != null;
 
-            if (isPieceBetween && _cases[positionCaseEntre].Piece.Couleur != source.Couleur)
-            {
-                // Verifie si la position de target est diagonale de 2 cases
-                if (Math.Abs(target.Position - source.Position) == 2 * JeuEtat.DIMENSION + 2 ||
-                    Math.Abs(target.Position - source.Position) == 2 * JeuEtat.DIMENSION - 2)
-                {
-                    // Check if the position behind the enemy piece is empty
-                    int positionBehindEnemy = (positionCaseEntre + source.Position) / 2;
-                    bool isEmptyBehindEnemy = _cases[positionBehindEnemy].Piece == null;
+            // if (isPieceBetween && _cases[positionCaseEntre].Piece.Couleur != source.Couleur)
+            // {
+            //     // Verifie si la position de target est diagonale de 2 cases
+            //     if (Math.Abs(target.Position - source.Position) == 2 * JeuEtat.DIMENSION + 2 ||
+            //         Math.Abs(target.Position - source.Position) == 2 * JeuEtat.DIMENSION - 2)
+            //     {
+            //         // Check if the position behind the enemy piece is empty
+            //         int positionBehindEnemy = (positionCaseEntre + source.Position) / 2;
+            //         bool isEmptyBehindEnemy = _cases[positionBehindEnemy].Piece == null;
 
-                    if (isEmptyBehindEnemy)
-                    {
-                        // Remove the captured piece from the board
-                        _cases[positionCaseEntre].MangePiece();
-                        return true; // Return true if it's an opponent's piece and the target is two spaces ahead diagonally with an empty space behind the enemy
-                    }
-                }
-            }
+            //         if (isEmptyBehindEnemy)
+            //         {
+            //             // Remove the captured piece from the board
+            //             _cases[positionCaseEntre].MangePiece();
+            //             return true; // Return true if it's an opponent's piece and the target is two spaces ahead diagonally with an empty space behind the enemy
+            //         }
+            //     }
+            // }
 
             return false; // No valid capture or regular move found
         }
@@ -195,38 +203,39 @@ namespace Echiquier
                 return false;
             }
 
-            if (source.Position % DIMENSION == 0)
-            {
-                return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION + 1)
-                    || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION + 1);
+            return false;
+            // if (source.X % DIMENSION == 0)
+            // {
+            //     return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION + 1)
+            //         || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION + 1);
 
-            }
-            if (source.Position % DIMENSION == DIMENSION - 1)
-            {
-                return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION - 1)
-                    || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION - 1);
+            // }
+            // if (source.Position % DIMENSION == DIMENSION - 1)
+            // {
+            //     return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION - 1)
+            //         || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION - 1);
 
-            }
-            return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION - 1)
-                    || (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION + 1)
-                    || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION - 1)
-                    || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION + 1);
+            // }
+            // return (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION - 1)
+            //         || (source.Piece.Couleur == true && target.Position == source.Position + DIMENSION + 1)
+            //         || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION - 1)
+            //         || (source.Piece.Couleur == false && target.Position == source.Position - DIMENSION + 1);
         }
 
         public int Gagne(CaseEtat source)
         {
+            return 0;
+            // if (source.Piece.Couleur == false && source.Position < DIMENSION )
+            // {
+            //     return 1;
 
-            if (source.Piece.Couleur == false && source.Position < DIMENSION )
-            {
-                return 1;
+            // }
+            // if (source.Piece.Couleur == true && source.Position > DIMENSION * (DIMENSION - 1))
+            // {
+            //     return 2;
 
-            }
-            if (source.Piece.Couleur == true && source.Position > DIMENSION * (DIMENSION - 1))
-            {
-                return 2;
-
-            }
-            else { return  0; }
+            // }
+            // else { return  0; }
 
 
         }

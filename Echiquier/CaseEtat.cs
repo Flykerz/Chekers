@@ -8,15 +8,17 @@ namespace Echiquier
 {
     public class CaseEtat : Etat
     {
-        private readonly  int _position;
+        private readonly  int _x;
+        private readonly  int _y;
         private readonly bool _couleur; // False = Blanc / True = Noir
 
         private PieceEtat? _piece; // La case peut porter une pièce (peut être à null).
         private       bool _selection;
 
-        public CaseEtat(int position, bool couleur, PieceEtat? piece)
+        public CaseEtat(int x, int y, bool couleur, PieceEtat? piece)
         {
-            _position = position;
+            _x = x;
+            _y = y;
             _couleur  = couleur;
             _piece    = piece;
         }
@@ -25,9 +27,15 @@ namespace Echiquier
         {
             get { return _couleur; }
         }
-        public int Position
+        
+        public int X
         {
-            get { return _position; }
+            get { return _x; }
+        }
+
+        public int Y
+        {
+            get { return _y; }
         }
 
         public PieceEtat? Piece
