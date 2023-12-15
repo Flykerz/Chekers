@@ -95,22 +95,35 @@ namespace Echiquier
         {
             CaseEtat? source = GetCaseSelectionnee();
 
-            // Si on a des manger obligatoires, seuls ceux-ci sont sélectionnables
-            if (_mangerObligatoires.Count > 0)
+            // Si on n'a pas de source, on s'arrête si ...
+            if (source == null)
             {
-                if (source == null && !_mangerObligatoires.ContainsKey(caseCliquee))
+                // ... la case ciblée est vide, ou appartient à l'autre joueur
+                if (caseCliquee.Piece == null || caseCliquee.Piece.Couleur != _joueurEnCours)
                 {
                     return;
                 }
+                // ... on a des manger obligatoires
+                if (_mangerObligatoires.Count > 0 && !_mangerObligatoires.ContainsKey(caseCliquee))
+                {
+                    return;
+                }
+
+                // Sinon, on peut sélectionner la case, et on s'arrête
+                caseCliquee.Selectionne(_joueurEnCours);
+                return;
             }
 
-            // If no source is selected, select the current case if it belongs to the current player
-            if (source == null)
+            // Si on a une source et qu'on re-clique sur la case sélectionnée, on la déselectionne
+            if (source == caseCliquee)
             {
-                if (caseCliquee.Piece != null && caseCliquee.Piece.Couleur == _joueurEnCours)
-                {
-                    caseCliquee.Selectionne(_joueurEnCours);
-                }
+                source.Deselectionne();
+                return;
+            }
+
+            // Si on a une source et des mangers de disponibles, on est obligé de choisir parmi eux
+            if (_mangerObligatoires.Count > 0 && _mangerObligatoires.ContainsKey(source) && !_mangerObligatoires[source].Contains(caseCliquee))
+            {
                 return;
             }
 
