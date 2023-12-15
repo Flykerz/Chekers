@@ -16,7 +16,7 @@ namespace Echiquier
 
         private readonly CaseEtat[] _cases;
 
-        private List<CaseEtat> _mangerObligatoires = new List<CaseEtat>();
+        private Dictionary<CaseEtat, List<CaseEtat>> _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
 
         private bool _joueurEnCours = false; // Commence par blanc
 
@@ -93,8 +93,18 @@ namespace Echiquier
         // Déclenché lors du clic sur une case.
         public void Interaction(CaseEtat caseCliquee)
         {
-            // If no source is selected, select the current case if it belongs to the current player
             CaseEtat? source = GetCaseSelectionnee();
+
+            // Si on a des manger obligatoires, seuls ceux-ci sont sélectionnables
+            if (_mangerObligatoires.Count > 0)
+            {
+                if (source == null && !_mangerObligatoires.ContainsKey(caseCliquee))
+                {
+                    return;
+                }
+            }
+
+            // If no source is selected, select the current case if it belongs to the current player
             if (source == null)
             {
                 if (caseCliquee.Piece != null && caseCliquee.Piece.Couleur == _joueurEnCours)
@@ -150,6 +160,7 @@ namespace Echiquier
         private void ChangeJoueur()
         {
             _joueurEnCours = !_joueurEnCours;
+            CalculeMangerObligatoires();
         }
 
 
@@ -235,12 +246,69 @@ namespace Echiquier
                 || (source.Piece.Couleur == false && target.Y == source.Y - 1 && target.X == source.X + 1);
         }
 
-        public List<CaseEtat> CalculeMangerObligatoires() 
+        private void CalculeMangerObligatoires() 
         {
-            return new List<CaseEtat>();
+            // Remise à zéro du dictionnaire des possibiltés
+            _mangerObligatoires = new Dictionary<CaseEtat, List<CaseEtat>>();
+
+            for (int i = 0; i < _cases.Length; i++)
+            {
+                CaseEtat caseEtat = _cases[i];
+                List<CaseEtat> mangerObligatoires = CalculeMangerObligatoirePourCase(caseEtat);
+                if (mangerObligatoires.Count > 0)
+                {
+                    _mangerObligatoires.Add(caseEtat, mangerObligatoires);
+                }
+            }
         }
 
-        public int Gagne(CaseEtat source)
+        private List<CaseEtat> CalculeMangerObligatoirePourCase(CaseEtat caseEtat)
+        {
+            bool caseEstVide = caseEtat.Piece == null;
+            bool caseEstEnnemie = caseEtat.Piece != null && caseEtat.Piece.Couleur != _joueurEnCours;
+            if (caseEstVide || caseEstEnnemie)
+            {
+                return new List<CaseEtat>();
+            }
+
+            List<CaseEtat> result = new List<CaseEtat>();
+
+            // En haut à droite
+            CaseEtat? targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 2 && c.Y == caseEtat.Y - 2);
+            CaseEtat? ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 1 && c.Y == caseEtat.Y - 1);
+            if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
+            {
+                result.Add(targetSiManger);
+            }
+
+            // En bas à droite
+            targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 2 && c.Y == caseEtat.Y + 2);
+            ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X + 1 && c.Y == caseEtat.Y + 1);
+            if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
+            {
+                result.Add(targetSiManger);
+            }
+
+            // En bas à gauche
+            targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 2 && c.Y == caseEtat.Y + 2);
+            ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 1 && c.Y == caseEtat.Y + 1);
+            if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
+            {
+                result.Add(targetSiManger);
+            }
+
+            // En haut à gauche
+            targetSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 2 && c.Y == caseEtat.Y - 2);
+            ennemiSiManger = _cases.ToList().Find(c => c.X == caseEtat.X - 1 && c.Y == caseEtat.Y - 1);
+            if (targetSiManger != null && targetSiManger.Piece == null && ennemiSiManger != null && ennemiSiManger.Piece != null && ennemiSiManger.Piece.Couleur != _joueurEnCours)
+            {
+                result.Add(targetSiManger);
+            }
+
+            return result;
+        }
+
+        private int Gagne(CaseEtat source)
         {
             if (source.Piece.Couleur == false && source.Y == 0 )
              {
