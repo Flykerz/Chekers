@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\cavalier-blanc.png" />
+    <None Remove="Resources\cavalier-noir.png" />
+    <None Remove="Resources\pion-blanc.png" />
+    <None Remove="Resources\pion-noir.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\cavalier-blanc.png" />
+    <Resource Include="Resources\cavalier-noir.png" />
+    <Resource Include="Resources\pion-blanc.png" />
+    <Resource Include="Resources\pion-noir.png" />
+  </ItemGroup>
+
+</Project>

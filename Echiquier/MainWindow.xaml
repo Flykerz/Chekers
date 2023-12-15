@@ -1,0 +1,72 @@
+﻿<Window x:Class="Echiquier.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Echiquier"
+        mc:Ignorable="d"
+        Title="Echiquier" Height="600" Width="600">
+    <ItemsControl ItemsSource="{Binding Cases}">
+
+        <!-- Panneau affichant tous les éléments -->
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <UniformGrid />
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        
+
+        <!-- Modèle d'affichage de CaseEtat -->
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Border x:Name="_caseFond" MouseDown="Case_MouseDown">
+                    <ContentControl Content="{Binding Piece}">
+                        
+                        <!-- Modèle d'affichage de PieceEtat -->
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate>
+                                <Image x:Name="_pieceImg" Width="48" Height="48" />
+                                <DataTemplate.Triggers>
+                                    <!-- Pion blanc -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Type.Nom}" Value="Pion" />
+                                            <Condition Binding="{Binding Couleur}" Value="False" />
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter TargetName="_pieceImg" Property="Source" Value="Resources/pion-blanc.png" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                    <!-- Pion noir -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Type.Nom}" Value="Pion" />
+                                            <Condition Binding="{Binding Couleur}" Value="True" />
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter TargetName="_pieceImg" Property="Source" Value="Resources/pion-noir.png" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+
+                    </ContentControl>
+                </Border>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding Couleur}" Value="False">
+                        <Setter TargetName="_caseFond" Property="Background" Value="Beige" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Couleur}" Value="True">
+                        <Setter TargetName="_caseFond" Property="Background" Value="Black" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Selection}" Value="True">
+                        <Setter TargetName="_caseFond" Property="BorderBrush" Value="Red" />
+                        <Setter TargetName="_caseFond" Property="BorderThickness" Value="4" />
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+        
+    </ItemsControl>
+</Window>
